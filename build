@@ -21,7 +21,7 @@ build () {
     (
     cd TetrisGYM || return 1
     git checkout "$gym_repo_branch" &>/dev/null
-    node build.js -t &>/dev/null
+    node build.js -w -t &>/dev/null
 )
 }
 
@@ -30,7 +30,7 @@ setup () {
     git clone https://github.com/zohassadar/nestris.js &>/dev/null
     (
     cd nestris.js || exit 1
-    node build.js &>/dev/null
+    node build.js -w &>/dev/null
     ) || return 1
     git clone "$gym_repo_url" &>/dev/null
     git -C TetrisGYM checkout "$gym_repo_branch" &>/dev/null

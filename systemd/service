@@ -2,6 +2,8 @@
 Description=Build TetrisGYM and update repository
 
 [Service]
+User=gymbuilds
+Group=gymbuilds
 Type=oneshot
 ExecStart=/usr/bin/env bash -c 'cd ${HOME}/gymbuilds/ && ./build'
 
