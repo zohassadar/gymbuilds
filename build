@@ -5,7 +5,7 @@ gym_repo_branch=builder
 output="patches/index.html"
 
 exit_message () {
-    printf "%s\n" "$1"
+    printf "gymbuilds: %s\n" "$1"
     exit
 }
 
@@ -65,12 +65,14 @@ build || exit_message "Build failure"
 [[ "$(<latest-sha1sum)" != "$(current_sha1sum)" ]] || exit_message "rom hasn't changed"
 
 # Copy patch and add to history
-patch=$(printf "TetrisGYM-%s.bps" $(date +"%y%m%d-%H%M"))
+patch=$(printf "TetrisGYM-%s.bps" $(date +"%y%m%d"))
 mkdir -p patches
 
 test -f TetrisGYM/tetris.bps || exit_message "Patch not created"
 cp "TetrisGYM/tetris.bps" "patches/${patch}"
 printf "%s %s %s\n" "${patch}" "$(current_commit)" "$(<latest-commit)" >> history
+
+
 
 # leave info for next build
 current_commit > latest-commit
@@ -78,8 +80,8 @@ current_sha1sum > latest-sha1sum
 
 # update html with patch history
 cat header > "$output"
-while read patch new_commit old_commit; do
-    printf '<a href="%s">%s</a>&nbsp' "$patch" "$patch" >> "$output"
+while read patchfile new_commit old_commit; do
+    printf '<a href="%s">%s</a>&nbsp' "$patchfile" "$patchfile" >> "$output"
     if [[ -n "$old_commit" ]]; then
         printf '<a href="%s/compare/%s...%s">diffs</a>' \
             "$gym_repo_url" "$old_commit" "$new_commit" >> "$output"
@@ -87,3 +89,14 @@ while read patch new_commit old_commit; do
     printf '<br>\n' >> "$output"
 done < <(tac history)
 cat footer >> "$output"
+
+git add history
+git add latest-commit
+git add latest-sha1sum
+git add "patches/${patch}"
+
+git add "$output"
+git commit -m "Automated update for ${patch}" &>/dev/null || exit_message "Unable to commit"
+git push &>/dev/null || exit_message "Unable to push"
+
+exit_message success
