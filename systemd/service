@@ -1,0 +1,9 @@
+[Unit]
+Description=Build TetrisGYM and update repository
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/env bash -c 'cd ${HOME}/gymbuilds/ && ./build'
+
+[Install]
+WantedBy=default.target

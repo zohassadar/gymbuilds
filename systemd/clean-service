@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+systemctl --user disable gymbuilds.timer --now
+rm -f ${HOME}/.config/systemd/user/gymbuilds.*

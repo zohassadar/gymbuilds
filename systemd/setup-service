@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+mkdir -p "${HOME}/.config/systemd/user"
+cp timer "${HOME}/.config/systemd/user/gymbuilds.timer"
+cp service "${HOME}/.config/systemd/user/gymbuilds.service"
+systemctl --user daemon-reload
+systemctl --user enable gymbuilds.timer --now
