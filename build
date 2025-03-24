@@ -77,7 +77,7 @@ current_sha1sum > latest-sha1sum
 # update html with patch history
 cat header > "$output"
 while read -r patchfile current_commit latest_commit; do
-    printf '<a href="%s">%s</a>&nbsp' "$patchfile" "$patchfile" >> "$output"
+    printf '<a href="%s">%s</a>&nbsp;' "$patchfile" "$patchfile" >> "$output"
     if [[ -n "$latest_commit" ]]; then
         printf '<a href="%s/compare/%s...%s">diffs</a>' \
             "$gym_repo_url" "$latest_commit" "$current_commit" >> "$output"
