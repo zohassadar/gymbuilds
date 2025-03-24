@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-gym_repo_url=https://github.com/zohassadar/TetrisGYM
-gym_repo_branch=builder
+gym_repo_url=https://github.com/kirjavascript/TetrisGYM
+gym_repo_branch=master
 output="patches/index.html"
 
 exit_message () {
