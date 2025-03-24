@@ -84,6 +84,6 @@ while read patch new_commit old_commit; do
         printf '<a href="%s/compare/%s...%s">diffs</a>' \
             "$gym_repo_url" "$old_commit" "$new_commit" >> "$output"
     fi
-    printf '<br>' >> "$output"
+    printf '<br>\n' >> "$output"
 done < <(tac history)
 cat footer >> "$output"
