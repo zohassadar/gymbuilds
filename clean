@@ -1,0 +1,6 @@
+rm -f latest-sha1sum
+rm -f latest-commit
+rm -f history
+rm -rf nestris.js
+rm -rf TetrisGYM
+rm -rf patches

@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+
+gym_repo_url=https://github.com/zohassadar/TetrisGYM
+gym_repo_branch=builder
+output="patches/index.html"
+
+exit_message () {
+    printf "%s\n" "$1"
+    exit
+}
+
+current_commit () {
+    git -C TetrisGYM log -n 1 --pretty=format:"%H"
+}
+
+current_sha1sum () {
+    sha1sum "TetrisGYM/tetris.nes"
+}
+
+build () {
+    (
+    cd TetrisGYM || return 1
+    git checkout "$gym_repo_branch" &>/dev/null
+    node build.js -t &>/dev/null
+)
+}
+
+setup () {
+    echo "setting up"
+    git clone https://github.com/zohassadar/nestris.js &>/dev/null
+    (
+    cd nestris.js || exit 1
+    node build.js &>/dev/null
+    ) || return 1
+    git clone "$gym_repo_url" &>/dev/null
+    git -C TetrisGYM checkout "$gym_repo_branch" &>/dev/null
+    cp "nestris.js/build/tetris.nes" "TetrisGYM/clean.nes"
+
+    build || return 1
+    touch latest-commit
+    touch latest-sha1sum
+}
+
+# Check if being run first time
+test -d TetrisGYM || setup || exit_message "setup failed"
+
+
+# make sure we're on the right branch and fetch updates
+git -C TetrisGYM checkout "$gym_repo_branch" &>/dev/null
+git -C TetrisGYM fetch &>/dev/null
+
+# exit if no updates
+[[ $(git -C TetrisGYM status | grep "branch is behind") ]] || \
+    [[ -z "$(<latest-commit)" ]] || \
+    exit_message "No updates"
+
+
+# merge updates, clean old rom and patch, then build
+git -C TetrisGYM merge "origin/${gym_repo_branch}" &>/dev/null
+rm -f TetrisGYM/tetris.bps
+rm -f TetrisGYM/tetris.nes
+build || exit_message "Build failure"
+
+# exit if rom hasn't changed
+[[ "$(<latest-sha1sum)" != "$(current_sha1sum)" ]] || exit_message "rom hasn't changed"
+
+# Copy patch and add to history
+patch=$(printf "TetrisGYM-%s.bps" $(date +"%y%m%d-%H%M"))
+mkdir -p patches
+
+test -f TetrisGYM/tetris.bps || exit_message "Patch not created"
+cp "TetrisGYM/tetris.bps" "patches/${patch}"
+printf "%s %s %s\n" "${patch}" "$(current_commit)" "$(<latest-commit)" >> history
+
+# leave info for next build
+current_commit > latest-commit
+current_sha1sum > latest-sha1sum
+
+# update html with patch history
+cat header > "$output"
+while read patch new_commit old_commit; do
+    printf '<a href="%s">%s</a>&nbsp' "$patch" "$patch" >> "$output"
+    if [[ -n "$old_commit" ]]; then
+        printf '<a href="%s/compare/%s...%s">diffs</a>' \
+            "$gym_repo_url" "$old_commit" "$new_commit" >> "$output"
+    fi
+    printf '<br>' >> "$output"
+done < <(tac history)
+cat footer >> "$output"
