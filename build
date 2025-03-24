@@ -65,7 +65,7 @@ build || exit_message "Build failure"
 [[ "$(<latest-sha1sum)" != "$(current_sha1sum)" ]] || exit_message "rom hasn't changed"
 
 # Copy patch and add to history
-patch=$(printf "TetrisGYM-%s.bps" $(date +"%y%m%d"))
+patch=$(printf "TetrisGYM-%s.bps" $(TZ="Etc/UTC" date +"%y%m%d-%H%M"))
 mkdir -p patches
 
 test -f TetrisGYM/tetris.bps || exit_message "Patch not created"
