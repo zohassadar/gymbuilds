@@ -5,7 +5,8 @@ Description=Build TetrisGYM and update repository
 User=gymbuilds
 Group=gymbuilds
 Type=oneshot
-ExecStart=/usr/bin/env bash -c 'cd ${HOME}/gymbuilds/ && ./build'
+ExecStart=/usr/bin/env bash -c 'cd "${HOME}/gymbuilds/" && ./build'
+Environment="GYMBUILDS_PUSH=1"
 
 [Install]
 WantedBy=default.target

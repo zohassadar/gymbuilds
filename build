@@ -27,6 +27,7 @@ build () {
 
 setup () {
     echo "setting up"
+    mkdir -p patches
     git clone https://github.com/zohassadar/nestris.js &>/dev/null
     (
     cd nestris.js || exit 1
@@ -44,13 +45,12 @@ setup () {
 # Check if being run first time
 test -d TetrisGYM || setup || exit_message "setup failed"
 
-
 # make sure we're on the right branch and fetch updates
 git -C TetrisGYM checkout "$gym_repo_branch" &>/dev/null
 git -C TetrisGYM fetch &>/dev/null
 
-# exit if no updates
-[[ $(git -C TetrisGYM status | grep "branch is behind") ]] || \
+# exit if no updates (unless first run)
+grep -q "branch is behind" <(git -C TetrisGYM status) || \
     [[ -z "$(<latest-commit)" ]] || \
     exit_message "No updates"
 
@@ -62,17 +62,13 @@ rm -f TetrisGYM/tetris.nes
 build || exit_message "Build failure"
 
 # exit if rom hasn't changed
-[[ "$(<latest-sha1sum)" != "$(current_sha1sum)" ]] || exit_message "rom hasn't changed"
+sha1sum -c latest-sha1sum &>/dev/null && exit_message "rom hasn't changed"
 
 # Copy patch and add to history
-patch=$(printf "TetrisGYM-%s.bps" $(TZ="Etc/UTC" date +"%y%m%d-%H%M"))
-mkdir -p patches
-
+patch=$(printf "TetrisGYM-%s.bps" "$(TZ="Etc/UTC" date +"%y%m%d-%H%M")")
 test -f TetrisGYM/tetris.bps || exit_message "Patch not created"
 cp "TetrisGYM/tetris.bps" "patches/${patch}"
 printf "%s %s %s\n" "${patch}" "$(current_commit)" "$(<latest-commit)" >> history
-
-
 
 # leave info for next build
 current_commit > latest-commit
@@ -80,22 +76,26 @@ current_sha1sum > latest-sha1sum
 
 # update html with patch history
 cat header > "$output"
-while read patchfile new_commit old_commit; do
+while read -r patchfile current_commit latest_commit; do
     printf '<a href="%s">%s</a>&nbsp' "$patchfile" "$patchfile" >> "$output"
-    if [[ -n "$old_commit" ]]; then
+    if [[ -n "$latest_commit" ]]; then
         printf '<a href="%s/compare/%s...%s">diffs</a>' \
-            "$gym_repo_url" "$old_commit" "$new_commit" >> "$output"
+            "$gym_repo_url" "$latest_commit" "$current_commit" >> "$output"
     fi
     printf '<br>\n' >> "$output"
 done < <(tac history)
 cat footer >> "$output"
 
+
+# Push if flag is set
+[[ -n "$GYMBUILDS_PUSH" ]] || exit_message "Skipping git push"
+
 git add history
 git add latest-commit
 git add latest-sha1sum
 git add "patches/${patch}"
-
 git add "$output"
+
 git commit -m "Automated update for ${patch}" &>/dev/null || exit_message "Unable to commit"
 git push &>/dev/null || exit_message "Unable to push"
 
